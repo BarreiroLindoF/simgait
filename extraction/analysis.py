@@ -155,6 +155,7 @@ def get_aligned_data(path_to_data, path_to_folder, side):
 
     # concatenate data into a numpy array
     data_all = np.concatenate(motion_data_all, axis=0)
+    print(data_all.shape)
     return data_all, np.array(labels), files
 
 
