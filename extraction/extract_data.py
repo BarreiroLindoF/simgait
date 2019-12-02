@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 from numpy import savetxt
+import pandas as pd 
 
 try:
     from my_utils import is_float, join_path, save_csv
@@ -26,11 +27,18 @@ FILES_TO_REMOVE = [
     "00070_00303_20080326-GBNNN-VDNN-02.C3D",
 ]
 
+currPath = os.path.dirname(os.getcwd())
+patho_path = "CP\\CP_Gait_1.0"
+datasets = [os.path.expanduser(currPath + "\\data\\raw\\" + patho_path)]
+keep_pathology = ["CP_Spastic_Uni_Hemiplegia", "CP_Spastic_Diplegia"]
+output_folder = currPath + "\data\extracted\CP"
 
 class Extracter:
     def __init__(self, datasets, keep_pathology=["CP_Spastic_Uni_Hemiplegia"]):
         self.datasets = datasets
         self.keep_pathology = keep_pathology
+        self.lst_pathology = []
+        self.files_and_pathology = []
 
         self.btk_reader = btk.btkAcquisitionFileReader()
         self.metadata_reader = None
@@ -56,11 +64,25 @@ class Extracter:
         # check if the pathology is what we need
         if dataset == "Healthy":
             keep_patho = True
+        """
+        # Keep only specifics pathologies if uncommented
+        
         else:
             keep_patho = (
                     self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
             )
-
+            
+        """
+        #####################
+        # Keep all pathologies (to comment and uncomment the code just above to keep just certain pathologies)
+        pathology = self.get_diagnostic(join_path(path, file_name))
+        if (pathology not in self.lst_pathology):
+            self.lst_pathology.append(pathology)
+        self.files_and_pathology.append(file_name.split(".")[0])
+        self.files_and_pathology.append(pathology)
+        keep_patho = True
+        #######################
+        
         # check if file isn't in remove files
         is_to_remove = file_name not in FILES_TO_REMOVE
         # check end
@@ -81,6 +103,26 @@ class Extracter:
                 if self._keep_file(path, dataset, f_name):
                     files.append(join_path(path, f_name))
         # print("".ljust(70), end="\r")
+        lst_patho = np.reshape(self.lst_pathology, (len(self.lst_pathology)))
+        files_with_patho = np.reshape(self.files_and_pathology, (np.int(len(self.files_and_pathology)/2), 2))
+        
+        # Save the list of all different pathologies
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        path = os.path.join(output_folder, "pathologies")
+        with open("{}.csv".format(path), mode="w") as file_:
+            for i in range(lst_patho.shape[0]):
+                    file_.write(lst_patho[i])
+                    file_.write("\n")
+        # Save the list of each file with each pathology
+        path = os.path.join(output_folder, "files_and_pathologies")
+        with open("{}.csv".format(path), mode="w") as file_:
+            for i in range(files_with_patho.shape[0]):
+                file_.write(files_with_patho[i,0])
+                file_.write(",")
+                file_.write(files_with_patho[i,1])
+                file_.write("\n")
+
         return files
 
     def _update_btk(self, file_path):
@@ -420,10 +462,6 @@ class Extracter:
 
 
 if __name__ == "__main__":
-    currPath = os.path.dirname(os.getcwd())
-    datasets = [os.path.expanduser(currPath + "\\data\\raw\\CP\\CP_Gait_1.0")]
-    keep_pathology = ["CP_Spastic_Uni_Hemiplegia", "CP_Spastic_Diplegia"]
-
     extracter = Extracter(datasets, keep_pathology=keep_pathology)
     extracter.angles_names = [
         "RAnkleAngles",
@@ -469,4 +507,4 @@ if __name__ == "__main__":
     extracter.extract(all_=True)
     # extracter.extract(examination=False, diagnostic=True, affected_side=False, gmfcs=False, angles=True, events=False, all_=False)
     # print("EXTRACTER DATA", extracter.data["affected_side"])
-    extracter.save(output_folder=currPath + "\data\extracted\CP")
+    extracter.save(output_folder=output_folder)

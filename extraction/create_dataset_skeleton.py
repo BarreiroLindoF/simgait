@@ -45,7 +45,6 @@ labels = labels[idx]
 files_data = np.array(files_data)[idx]
 print("Markers after remove:", data.shape, labels.shape, len(files_data))
 
-
 # build matrix with clinical data for each file
 data_clinical = np.zeros((data.shape[0], clinical.shape[1]))
 for idx in range(data.shape[0]):
