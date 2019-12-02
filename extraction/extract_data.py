@@ -64,15 +64,14 @@ class Extracter:
         # check if the pathology is what we need
         if dataset == "Healthy":
             keep_patho = True
-        """
+        
         # Keep only specifics pathologies if uncommented
         
         else:
             keep_patho = (
                     self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
             )
-            
-        """
+        
         #####################
         # Keep all pathologies (to comment and uncomment the code just above to keep just certain pathologies)
         pathology = self.get_diagnostic(join_path(path, file_name))
@@ -80,9 +79,8 @@ class Extracter:
             self.lst_pathology.append(pathology)
         self.files_and_pathology.append(file_name.split(".")[0])
         self.files_and_pathology.append(pathology)
-        keep_patho = True
         #######################
-        
+                
         # check if file isn't in remove files
         is_to_remove = file_name not in FILES_TO_REMOVE
         # check end
@@ -103,6 +101,7 @@ class Extracter:
                 if self._keep_file(path, dataset, f_name):
                     files.append(join_path(path, f_name))
         # print("".ljust(70), end="\r")
+        
         lst_patho = np.reshape(self.lst_pathology, (len(self.lst_pathology)))
         files_with_patho = np.reshape(self.files_and_pathology, (np.int(len(self.files_and_pathology)/2), 2))
         
@@ -122,7 +121,7 @@ class Extracter:
                 file_.write(",")
                 file_.write(files_with_patho[i,1])
                 file_.write("\n")
-
+                
         return files
 
     def _update_btk(self, file_path):
@@ -185,6 +184,7 @@ class Extracter:
             '''
             if events or all_:
                 self.data["events"][-1] = self.get_events(self.files[file_id])
+
         # print("".ljust(70), end="\r")
 
     def get_examination(self, file_path):
