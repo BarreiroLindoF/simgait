@@ -1,3 +1,5 @@
 data/ 
 .idea/
 __pycache__/
+extraction/__pycache__/
+extraction/btk/__pycache__/

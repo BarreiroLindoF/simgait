@@ -349,6 +349,7 @@ class Extracter:
         except:
             return None
         markers_data = np.array(markers_data)
+        print(markers_data.shape)
         return markers_data
 
     def get_angles(self, file_path):
