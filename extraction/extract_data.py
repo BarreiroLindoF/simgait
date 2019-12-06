@@ -421,10 +421,11 @@ class Extracter:
 
 
 if __name__ == "__main__":
-    datasets = [os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\CP_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\ITW_RETRACTION_TRICEPS_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\Healthy\\Healthy")]
+    
+    datasets = [os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\CP_Gait_1.0"),
+                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"),
+                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_TRICEPS_Gait_1.0"),
+                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\Healthy\\Healthy")]
 
     keep_pathology = ['CP_Spastic_Uni_Hemiplegia',
                       'CP_Spastic_Bi_Diplegia',

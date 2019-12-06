@@ -3,3 +3,4 @@ data/
 __pycache__/
 extraction/__pycache__/
 extraction/btk/__pycache__/
+extraction/DATASETS
