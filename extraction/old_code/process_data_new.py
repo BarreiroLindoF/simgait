@@ -7,56 +7,25 @@ from scipy.interpolate import interp1d
 
 from utils import *
 
-list_to_remove_left = ['00775_01593_20100614-GBNNN-VDEF-06.npy', '00419_00763_20090624-GBNNN-VDEF-11.npy', '00067_00239_20080305-GBNNN-VDEF-10.npy', '00501_01493_20100503-GBNNN-VDEF-09.npy', '00478_00866_20091111-GBNNN-VDEF-08.npy', '00032_00085_20071205-GBNNN-VDEF-05.npy', '00237_00379_20080730-GBNNN-VDEF-15.npy', '00419_00763_20090624-GBNNN-VDEF-12.npy', '01814_02780_20121010-GBNNN-VDEF-23.npy', '00984_01573_20100602-GBNNN-VDEF-11.npy', '00478_00866_20091111-GBNNN-VDEF-07.npy',
-                       '00501_01493_20100503-GBNNN-VDEF-11.npy', '00501_01493_20100503-GBNNN-VDEF-06.npy', '00134_02027_20110309-GBNNN-VDEF-12.npy', '00032_00085_20071205-GBNNN-VDEF-04.npy', '00419_00763_20090624-GBNNN-VDEF-15.npy', '00052_00841_20091021-GBNNN-VDEF-09.npy', '00478_00866_20091111-GBNNN-VDEF-13.npy', '00237_00379_20080730-GBNNN-VDEF-11.npy', '00052_00841_20091021-GBNNN-VDEF-11.npy', '00478_00866_20091111-GBNNN-VDEF-14.npy', '01745_02618_20120507-GBNNN-VDEF-10.npy', '00192_00469_20080825-GBNNN-VDEF-19.npy']
-list_to_remove_right = ['00118_00598_20081105-GBNNN-VDEF-12.npy', '00567_01123_20100331-GBNNN-VDEF-08.npy', '00419_00763_20090624-GBNNN-VDEF-11.npy', '00025_00299_20080319-GBNNN-VDEF-18.npy', '00501_01493_20100503-GBNNN-VDEF-09.npy', '00237_00379_20080730-GBNNN-VDEF-13.npy', '00478_00866_20091111-GBNNN-VDEF-08.npy', '00032_00085_20071205-GBNNN-VDEF-05.npy', '00237_00379_20080730-GBNNN-VDEF-15.npy', '00419_00763_20090624-GBNNN-VDEF-12.npy', '00984_01573_20100602-GBNNN-VDEF-11.npy', '00052_00841_20091021-GBNNN-VDEF-13.npy', '01870_02866_20121203-GBNNN-VDEF-14.npy',
-                        '00501_01493_20100503-GBNNN-VDEF-11.npy', '01969_03046_20130527-GBNNN-VDEF-10.npy', '00419_00763_20090624-GBNNN-VDEF-15.npy', '00192_00469_20080825-GBNNN-VDEF-13.npy', '00984_01573_20100602-GBNNN-VDEF-13.npy', '00607_01920_20110117-GBNNN-VDEF-05.npy', '00052_00841_20091021-GBNNN-VDEF-09.npy', '00237_00379_20080730-GBNNN-VDEF-11.npy', '01971_03070_20130624-GBNNN-VDEF-23.npy', '00478_00866_20091111-GBNNN-VDEF-14.npy', '00025_00299_20080319-GBNNN-VDEF-06.npy', '00567_01123_20100331-GBNNN-VDEF-16.npy', '00048_00647_20081222-GBNNN-VDEF-13.npy']
-
-def align_and_save_data(data, events, output_folder, file_, type_data="angles"):
+def align_and_save_data(data, events, output_folder, file_):
     def align_save_side(side):
-        os.makedirs(join_path(output_folder, "{}_aligned".format(
-            type_data), side), exist_ok=True)
-        idx_list = events[
-            np.logical_and(
-                events[:, 1] == " {}".format(
-                    side), events[:, 2] == " FootStrike"
-            ),
-            0,
-        ].astype(int)
+        os.makedirs(join_path(output_folder, 'angles_aligned', side), exist_ok=True)
+        idx_list = events[np.logical_and(events[:, 1]==' {}'.format(side), events[:, 2]==' FootStrike'), 0].astype(int)
         cycle_data = []
-        for idx in range(len(idx_list) - 1):
+        for idx in range(len(idx_list)-1):
             cycle_angle = []
             for n_angle in range(data.shape[0]):
-                x = np.linspace(0, 101, num=idx_list[idx + 1] - idx_list[idx])
+                x = np.linspace(0, 101, num=idx_list[idx+1]-idx_list[idx])
                 cycle_cord = []
                 for cord in range(3):
-                    f = interp1d(
-                        x,
-                        data[n_angle, idx_list[idx]: idx_list[idx + 1], cord],
-                        kind="cubic",
-                    )
+                    f = interp1d(x, data[n_angle, idx_list[idx]:idx_list[idx+1], cord], kind='cubic')
                     cycle_cord.append(f(np.arange(0, 101)))
                 cycle_angle.append(np.array(cycle_cord).T)
             cycle_data.append(np.array(cycle_angle))
         if len(cycle_data):
-            np.save(
-                join_path(output_folder, "{}_aligned".format(
-                    type_data), side, file_),
-                np.array(cycle_data),
-            )
-
-    if type_data == "markers":
-        if file_ not in list_to_remove_left:
-            align_save_side("Left")
-        else:
-            print(file_)
-        if file_ not in list_to_remove_right:
-            align_save_side("Right")
-        else:
-            print(file_)
-    else:
-        align_save_side("Left")
-        align_save_side("Right")
+            np.save(join_path(output_folder, 'angles_aligned', side, file_), np.array(cycle_data))
+    align_save_side('Left')
+    align_save_side('Right')
 
 def get_examination_data(path, idx_keep, th_rows, th_cols, plots):
     examination_data = load_csv(path, dtype=str)
@@ -134,35 +103,25 @@ def get_examination_data(path, idx_keep, th_rows, th_cols, plots):
     idx_rows_keep = idx_keep
     return examination_data, idx_rows_keep, idx_cols_keep
 
-def get_angles_data(input_folder, output_folder, files_keep, type_data="angles", align=True):
-    files_keep_clean = [file_name.split(".")[0] for file_name in files_keep]
-
-    files_angles = get_files(join_path(input_folder, type_data))
+def get_angles_data(input_folder, output_folder, files_keep, align=True):
+    files_keep_clean = [file_name.split('.')[0] for file_name in files_keep]
+    files_angles = get_files(join_path(input_folder, 'angles'))
     if align:
-        files_events = get_files(join_path(input_folder, "events"))
-
-    os.makedirs(join_path(output_folder, type_data), exist_ok=True)
+        files_events = get_files(join_path(input_folder, 'events'))
+    
+    os.makedirs(join_path(output_folder, 'angles'), exist_ok=True)
     for file_ in files_angles:
+        print(file_)
+        if file_.split('.')[0] in files_keep_clean:
+            data = np.load(join_path(input_folder, 'angles', file_))   
+            # if np.count_nonzero(np.isnan(data)):
+            #     print("Found non zero")
+            #     continue
 
-        if file_.split(".")[0] in files_keep_clean:
-            data = np.load(join_path(input_folder, type_data,
-                                     file_), allow_pickle=True)
-            if len(data.shape) == 3:
-                if np.count_nonzero(np.isnan(data)):
-                    continue
-            else:
-                continue
-            np.save(join_path(output_folder, type_data, file_), data)
+            np.save(join_path(output_folder, 'angles', file_), data)
             if align:
-                events = load_csv(
-                    join_path(
-                        input_folder, "events", "{}.csv".format(
-                            file_.split(".")[0])
-                    ),
-                    dtype=str,
-                )
-                align_and_save_data(
-                    data, events, output_folder, file_, type_data=type_data)
+                events = load_csv(join_path(input_folder, 'events', "{}.csv".format(file_.split('.')[0])), dtype=str)
+                align_and_save_data(data, events, output_folder, file_)
 
 
 
@@ -233,18 +192,15 @@ def main(raw_data_folder, output_folder='data', keep_pathology='all', th_rows=22
     save_csv(join_path(output_folder, 'y.csv'), side_data)
     save_csv(join_path(output_folder, 'files.csv'), files)
     #save_csv(join_path(output_folder, 'features_labels.csv'), features_labels)
-    angles_data = get_angles_data(raw_data_folder, output_folder, files, type_data="angles", align=True)
-    markers_data = get_angles_data(raw_data_folder, output_folder, files, type_data="markers", align=True)
+    angles_data = get_angles_data(raw_data_folder, output_folder, files, align=True)
     print('1')
 
 if __name__ == "__main__":
-    raw_data_folder = 'data_extracted'
-
-    keep_pathology = ['CP_Spastic_Uni_Hemiplegia',
+    raw_data_folder = 'temp_folders/data_extracted_pablo'
+    keep_pathology = 'CP_Spastic_Uni_Hemiplegia'
+    keep_pathology = ['CP_Spastic_Uni_Hemiplegia', 'CP_Spastic_Bi_Diplegia']
+    keep_pathology = ['CP_Spastic_Uni_Hemiplegia', 
                       'CP_Spastic_Bi_Diplegia',
                       'Idiopathic toe walker',
-                      'CP_Ataxic',
-                      # 'CP_Spastic_Bi_Quadriplegia',
-                      'Polytraumatisme']
-
-    main(raw_data_folder, output_folder='data_cleaned', keep_pathology=keep_pathology, plots=False)
+                      'Healthy']
+    main(raw_data_folder, output_folder='temp_folders/data_cleaned_pablo', keep_pathology=keep_pathology, plots=False)

@@ -2,17 +2,16 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import sys
 
 import numpy as np
+from numpy import savetxt
+import pandas as pd
 
-from btk import btk
-
-
-
-from utils import is_float, join_path, save_csv
-
-
+try:
+    from my_utils import is_float, join_path, save_csv
+    from btk import btk
+except:
+    raise
 
 FILES_TO_REMOVE = [
     "00099_00634_20051125-GBNNN-VDNN-15.C3D",
@@ -26,13 +25,24 @@ FILES_TO_REMOVE = [
     "00041_02782_20121015-GBASN-VDEF-05.C3D",
     "00250_00353_20080714-GBNNT-VDEF-04.C3D",
     "00070_00303_20080326-GBNNN-VDNN-02.C3D",
+    "00485_00939_20100113-GBNNN-VDEF-03.C3D",
 ]
+
+currPath = os.path.dirname(os.getcwd())
+patho_path = "CP\\CP_Gait_1.0"
+patho_path2 = "RETRACTION\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"
+datasets = [os.path.expanduser(currPath + "\\data\\raw\\" + patho_path),
+            os.path.expanduser(currPath + "\\data\\raw\\" + patho_path2),
+            ]
+output_folder = currPath + "\\data\\extracted"
 
 
 class Extracter:
     def __init__(self, datasets, keep_pathology=["CP_Spastic_Uni_Hemiplegia"]):
         self.datasets = datasets
         self.keep_pathology = keep_pathology
+        self.lst_pathology = []
+        self.files_and_pathology = []
 
         self.btk_reader = btk.btkAcquisitionFileReader()
         self.metadata_reader = None
@@ -51,23 +61,39 @@ class Extracter:
         )
 
     def _keep_file(self, path, dataset, file_name):
+        # print(dataset)
         # check if it's a file
         is_file = os.path.isfile(join_path(path, file_name))
         # check if it's a c3d
         is_c3d = file_name[-3:].lower() == "c3d"
         # check if the pathology is what we need
-        if dataset.lower() == "healthy":
+        if dataset == "Healthy":
             keep_patho = True
+
+        # Keep only specifics pathologies if uncommented
+
         else:
             keep_patho = (
-                self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
+                    self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
             )
+
+        #####################
+        # Keep all pathologies (to comment and uncomment the code just above to keep just certain pathologies)
+        pathology = self.get_diagnostic(join_path(path, file_name))
+        if (pathology not in self.lst_pathology):
+            self.lst_pathology.append(pathology)
+        self.files_and_pathology.append(file_name.split(".")[0])
+        self.files_and_pathology.append(pathology)
+        #######################
 
         # check if file isn't in remove files
         is_to_remove = file_name not in FILES_TO_REMOVE
         # check end
+        # print(dataset)
         if dataset == "CP_Gait_1.0":
+            # print(dataset)
             end_file = file_name.split("-")[-2]
+            # print(end_file)
             if end_file != "VDEF":
                 return False
             if file_name.split("-")[-3] != "GBNNN":
@@ -79,14 +105,33 @@ class Extracter:
         files = []
         for path in self.datasets:
             for f_name in os.listdir(path):
-                if f_name.split(".")[-1].upper() != "C3D":
-                    continue
                 self.n_total_files += 1
-                print("SEARCHING files ...", end="\r")
+                # print("SEARCHING files ...", end="\r")
                 dataset = path.split("\\")[-1]
                 if self._keep_file(path, dataset, f_name):
                     files.append(join_path(path, f_name))
-        print("".ljust(70), end="\r")
+        # print("".ljust(70), end="\r")
+
+        lst_patho = np.reshape(self.lst_pathology, (len(self.lst_pathology)))
+        files_with_patho = np.reshape(self.files_and_pathology, (np.int(len(self.files_and_pathology) / 2), 2))
+
+        # Save the list of all different pathologies
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        path = os.path.join(output_folder, "pathologies")
+        with open("{}.csv".format(path), mode="w") as file_:
+            for i in range(lst_patho.shape[0]):
+                file_.write(lst_patho[i])
+                file_.write("\n")
+        # Save the list of each file with each pathology
+        path = os.path.join(output_folder, "files_and_pathologies")
+        with open("{}.csv".format(path), mode="w") as file_:
+            for i in range(files_with_patho.shape[0]):
+                file_.write(files_with_patho[i, 0])
+                file_.write(",")
+                file_.write(files_with_patho[i, 1])
+                file_.write("\n")
+
         return files
 
     def _update_btk(self, file_path):
@@ -97,15 +142,15 @@ class Extracter:
         self.metadata_reader = acq.GetMetaData()
 
     def extract(
-        self,
-        examination=False,
-        diagnostic=False,
-        affected_side=False,
-        gmfcs=False,
-        markers=False,
-        angles=False,
-        events=False,
-        all_=False,
+            self,
+            examination=False,
+            diagnostic=False,
+            affected_side=False,
+            gmfcs=False,
+            markers=False,
+            angles=False,
+            events=False,
+            all_=False,
     ):
         self.data = self.init_data(locals())
 
@@ -117,10 +162,9 @@ class Extracter:
                 self.angles_names = self.get_labels_angles()
 
         for file_id in range(len(self.files)):
-            print(self.files[file_id])
             dataset = self.files[file_id].split("\\")[-2]
-            print("EXTRACTING FILE {} OVER {}".format(file_id, len(self.files)), end='\r')
-
+            # print("EXTRACTING FILE {} OVER {}".format(file_id, len(self.files)), end='\r')
+            print(self.files[file_id])
             self.add_file(self.files[file_id])
             if examination or all_:
                 self.data["examination"][-1] = self.get_examination(self.files[file_id])
@@ -144,11 +188,14 @@ class Extracter:
                 data = self.get_markers(self.files[file_id])
                 if data is not None:
                     self.data["markers"][-1] = self.get_markers(self.files[file_id])
+            '''
             if angles or all_:
                 self.data["angles"][-1] = self.get_angles(self.files[file_id])
+            '''
             if events or all_:
                 self.data["events"][-1] = self.get_events(self.files[file_id])
-        print("".ljust(70), end="\r")
+
+        # print("".ljust(70), end="\r")
 
     def get_examination(self, file_path):
         """Examination data starts with A_ or C_."""
@@ -164,10 +211,10 @@ class Extracter:
             if label.lower() in self.list_labels:
                 value = (
                     meta_subject.FindChild(label)
-                    .value()
-                    .GetInfo()
-                    .ToString()[0]
-                    .replace(" ", "")
+                        .value()
+                        .GetInfo()
+                        .ToString()[0]
+                        .replace(" ", "")
                 )
 
                 if value[-1] in "-+_*°" and len(value) >= 1:
@@ -195,11 +242,11 @@ class Extracter:
         self._update_btk(file_path)
         diag = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("DIAGNOSTIC")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("DIAGNOSTIC")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         return diag
 
@@ -207,11 +254,11 @@ class Extracter:
         self._update_btk(file_path)
         aff_side = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("AFFECTED_SIDE")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("AFFECTED_SIDE")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         aff_side = aff_side.replace("\r", " ")
         if aff_side == "Null":
@@ -223,11 +270,11 @@ class Extracter:
         self._update_btk(file_path)
         gmfcs = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("GMFCS")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("GMFCS")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         return gmfcs
 
@@ -235,12 +282,12 @@ class Extracter:
         labels_list = []
 
         for file_id in range(len(self.files)):
-            print(
-                "SEARCHING FEATURES FOR EXAMINATION IN FILE {} OVER {}".format(
-                    file_id, len(self.files)
-                ),
-                end="\r",
-            )
+            # print(
+            #     "SEARCHING FEATURES FOR EXAMINATION IN FILE {} OVER {}".format(
+            #         file_id, len(self.files)
+            #     ),
+            #     end="\r",
+            # )
 
             labels_list_tmp = []
             reader = btk.btkAcquisitionFileReader()
@@ -263,7 +310,7 @@ class Extracter:
         labels_list.sort()
         labels_list = ["age", "sex"] + labels_list
 
-        print("".ljust(70), end="\r")
+        # print("".ljust(70), end="\r")
         return labels_list
 
     def get_labels_angles(self):
@@ -271,12 +318,12 @@ class Extracter:
         labels_list = []
         files_ = self.files[:]
         for file_id in range(len(self.files)):
-            print(
-                "SEARCHING NAMES FOR ANGLES IN FILE {} OVER {}".format(
-                    file_id, len(self.files)
-                ),
-                end="\r",
-            )
+            # print(
+            #     "SEARCHING NAMES FOR ANGLES IN FILE {} OVER {}".format(
+            #         file_id, len(self.files)
+            #     ),
+            #     end="\r",
+            # )
             reader = btk.btkAcquisitionFileReader()
             reader.SetFilename(self.files[file_id])
             reader.Update()
@@ -284,11 +331,11 @@ class Extracter:
             metadata = acq.GetMetaData()
             labels_list_tmp = list(
                 metadata.FindChild("POINT")
-                .value()
-                .FindChild("ANGLES")
-                .value()
-                .GetInfo()
-                .ToString()
+                    .value()
+                    .FindChild("ANGLES")
+                    .value()
+                    .GetInfo()
+                    .ToString()
             )
             labels_list_tmp = [name.replace(" ", "") for name in labels_list_tmp]
             if len(labels_list_tmp) > 16:
@@ -300,7 +347,7 @@ class Extracter:
                 files_.remove(self.files[file_id])
             # if not len(labels_list):  labels_list = labels_list_tmp[:]
             # else: labels_list = set(labels_list).intersection(labels_list_tmp)
-        print("".ljust(70), end="\r")
+        # print("".ljust(70), end="\r")
 
         self.files = files_[:]
         return list(labels_list)
@@ -330,20 +377,20 @@ class Extracter:
         event_frames = [acq.GetEvent(event).GetFrame() for event in range(n_events)]
         event_side = list(
             self.metadata_reader.FindChild("EVENT")
-            .value()
-            .FindChild("CONTEXTS")
-            .value()
-            .GetInfo()
-            .ToString()
+                .value()
+                .FindChild("CONTEXTS")
+                .value()
+                .GetInfo()
+                .ToString()
         )
         event_side = [name.replace(" ", "") for name in event_side]
         event_type = list(
             self.metadata_reader.FindChild("EVENT")
-            .value()
-            .FindChild("LABELS")
-            .value()
-            .GetInfo()
-            .ToString()
+                .value()
+                .FindChild("LABELS")
+                .value()
+                .GetInfo()
+                .ToString()
         )
         event_type = [name.replace(" ", "") for name in event_type]
         event_frames, event_side, event_type = zip(
@@ -380,7 +427,11 @@ class Extracter:
             else:
                 self.data[key].append(None)
 
-    def save(self, output_folder="data_extracted"):
+    def save_csv(folder_tmp, files_name, data, first_row):
+        # savetxt(path, data)
+        return None
+
+    def save(self, output_folder):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
@@ -392,16 +443,17 @@ class Extracter:
                     os.makedirs(folder_tmp)
                 for idx in range(len(self.data[key])):
                     np.save(
-                        join_path(folder_tmp, self.data["files"][idx].split(".")[0]),
+                        join_path(folder_tmp, self.data["files"][idx].split("\\")[-1].split('.')[0]),
                         self.data[key][idx],
                     )
+
             elif key == "events":
                 folder_tmp = join_path(output_folder, "events")
                 if not os.path.exists(folder_tmp):
                     os.makedirs(folder_tmp)
                 for idx in range(len(self.data["events"])):
                     save_csv(
-                        join_path(folder_tmp, self.data["files"][idx].split(".")[0]),
+                        join_path(folder_tmp, self.data["files"][idx].split("\\")[-1].split('.')[0]),
                         self.data["events"][idx][1:],
                         first_row=self.data["events"][idx][0],
                     )
@@ -420,18 +472,9 @@ class Extracter:
 
 
 if __name__ == "__main__":
-    datasets = [os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\CP_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\ITW_RETRACTION_TRICEPS_Gait_1.0"),
-                os.path.expanduser("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\extraction\\DATASETS\\Healthy\\Healthy")]
-
-    keep_pathology = ['CP_Spastic_Uni_Hemiplegia',
-                      'CP_Spastic_Bi_Diplegia',
-                      'Idiopathic toe walker',
-                      'CP_Ataxic',
-                      # 'CP_Spastic_Bi_Quadriplegia',
-                      'Polytraumatisme']
-
+    keep_pathology = ["CP_Spastic_Uni_Hemiplegia", "CP_Spastic_Bi_Diplegia", "CP_Ataxic", "CP_Spastic_Bi_Quadriplegia",
+                      "Polytraumatisme"]
+    # , "Idiopathic toe walker"
     extracter = Extracter(datasets, keep_pathology=keep_pathology)
     extracter.angles_names = [
         "RAnkleAngles",
@@ -450,8 +493,12 @@ if __name__ == "__main__":
         "LKNE",
         "LASI",
         "LFIN",
+        "LWRA",
+        "LWRB",
         "LELB",
         "LSHO",
+        "LFHD",
+        "LBHD",
         "T10",
         "STRN",
         "CLAV",
@@ -462,11 +509,17 @@ if __name__ == "__main__":
         "RKNE",
         "RASI",
         "RFIN",
+        "RWRA",
+        "RWRB",
         "RELB",
         "RSHO",
+        "RFHD",
+        "RBHD",
     ]
 
-    # extracter.extract(all_=True)
-    extracter.extract(examination=True, diagnostic=True, affected_side=True, gmfcs=False, angles=True, markers=True, events=True, all_=False)
-
-    extracter.save(output_folder="data_extracted")
+    extracter.extract(all_=True)
+    # extracter.extract(examination=False, diagnostic=True, affected_side=False, gmfcs=False, angles=True, events=False, all_=False)
+    # print("EXTRACTER DATA", extracter.data["affected_side"])
+    print("Test")
+    print("Données d'extraction", extracter.data)
+    extracter.save(output_folder=output_folder)
