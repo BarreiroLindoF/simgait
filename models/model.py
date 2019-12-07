@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 import torch
 import torch.nn as nn
+from torch.functional import F
 
 
 # Abstract class simulating and interface
@@ -114,20 +115,105 @@ class Rnn(nn.Module):
 # Concrete class implementing Convolutional Neural Network using PyTorch
 class Cnn(nn.Module):
 
+    class Flatten(nn.Module):
+        def forward(self, input):
+            self.result = input.view(input.size(0), -1)
+            return self.result
+
     def __init__(self):
-        self.random = RandomForestClassifier(100)
+        super(Cnn, self).__init__()
+
+        # top conv
+        self.conv1 = nn.Conv1d(60, 64, 3) # from 60 channels with 64 filters, conv kernel 3
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool1d(2)
+        self.conv12 = nn.Conv1d(64, 64, 3)
+        self.relu12 = nn.ReLU()
+        self.mp12 = nn.MaxPool1d(2)
+
+        # middle conv
+        self.conv2 = nn.Conv1d(60, 64, 5) # from 60 channels with 64 filters, conv kernel 3
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool1d(2)
+        self.conv22 = nn.Conv1d(64, 64, 5)
+        self.relu22 = nn.ReLU()
+        self.mp22 = nn.MaxPool1d(2)
+
+        # middle conv
+        self.conv3 = nn.Conv1d(60, 64, 7) # from 60 channels with 64 filters, conv kernel 3
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool1d(2)
+        self.conv23 = nn.Conv1d(64, 64, 7)
+        self.relu23 = nn.ReLU()
+        self.mp23 = nn.MaxPool1d(2)
+
+        # concat
+        self.flatten = self.Flatten()
+
+        # convolution all image
+
+        self.conv_all = nn.Conv1d(64, 32, 3)
+        self.mp_all = nn.MaxPool1d(2)
+        self.relu_all = nn.ReLU()
+
+        # Flatten
+
+        self.fc1 = nn.Linear(1000, 6)
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn12 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(64)
+        self.bn21 = nn.BatchNorm1d(64)
+        self.bn3 = nn.BatchNorm1d(64)
+        self.bn31 = nn.BatchNorm1d(64)
 
     def forward(self, x):
-        out = None
-        hidden = None
+        # top conv
+        z = self.conv1(x)
+        z = self.bn1(z)
+        z = self.relu1(z)
+        z = self.mp1(z)
+        z = self.conv12(z)
+        z = self.bn12(z)
+        z = self.relu12(z)
+        z = self.mp12(z)
 
-        ##################################################################################
-        '''==============================YOUR CODE HERE=============================='''''
+        # middle conv
+        y = self.conv2(x) # from 60 channels with 64 filters, conv kernel 3
+        y = self.bn2(y)
+        y = self.relu2(y)
+        y = self.mp2(y)
+        y = self.conv22(y)
+        y = self.bn21(y)
+        y = self.relu22(y)
+        y = self.mp22(y)
 
-        '''=========================================================================='''''
-        ##################################################################################
+        # middle conv
+        w = self.conv3(x) # from 60 channels with 64 filters, conv kernel 3
+        w = self.bn3(w)
+        w = self.relu3(w)
+        w = self.mp3(w)
+        w = self.conv23(w)
+        w = self.bn31(w)
+        w = self.relu23(w)
+        w = self.mp23(w)
 
-        return out, hidden
+        # concat
+
+        x = torch.cat((z, y, w), dim=2) # horizontal concat
+
+        # convolution all image
+
+        x = self.conv_all(x)
+        x = self.mp_all(x)
+        x = self.relu_all(x)
+
+        # Flatten
+
+        x = self.flatten(x)
+        self.fc1 = nn.Linear(self.flatten.result.shape[1], 6)
+
+        return x
 
     def init_hidden(self, batch_size):
         hidden = None
