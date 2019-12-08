@@ -7,16 +7,17 @@ import pickle
 # Directory paths
 cv_paths = "C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\cross_val"
 cv_1_path= cv_paths + "\\CV_1"
+cv_2_path= cv_paths + "\\CV_2"
 
 # Train paths
-files_train_csv_path = cv_1_path + "\\files_train.csv"
-y_train_csv_path = cv_1_path + "\\y_train.csv"
-markers_train_path = cv_1_path + "\\markers\\train\\"
+files_train_csv_path = cv_2_path + "\\files_train.csv"
+y_train_csv_path = cv_2_path + "\\y_train.csv"
+markers_train_path = cv_2_path + "\\markers\\train\\"
 
 # Test paths
-files_test_csv_path = cv_1_path + "\\files_test.csv"
-y_test_csv_path = cv_1_path + "\\y_test.csv"
-markers_test_path = cv_1_path + "\\markers\\test\\"      
+files_test_csv_path = cv_2_path + "\\files_test.csv"
+y_test_csv_path = cv_2_path + "\\y_test.csv"
+markers_test_path = cv_2_path + "\\markers\\test\\"      
 
 # Construct dataset with fixed nb frames to 100
 def construct_dataset (files_csv_path, y_csv_path, markers_path) :
