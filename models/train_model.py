@@ -1,27 +1,25 @@
-import models
+from model import *
 import json
 from tester import SplitValidationTester
 import numpy as np
 import sys
-from pre_processing_old import Pre_Processing
-from c3d_reader import C3D_Reader
-
-#Path and directory to find the c3d files
-data_directory = './data/'
-sub_directories = ['CP','FD','ITW']
     
 def main():
     
-    '''
-    preprocess_data_random_forest()
-    train_random_forest()
+    
+    X = np.load("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\random_forest_formated\\x.npy")
+    y = np.load("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\random_forest_formated\\y.npy")
+    print(X)
+    print(y)
+    
     
     #RandomForest
-    model = models.RandomForest()
+    model = RandomForest()
     tester = SplitValidationTester(model, 0.2)
-    accuracy = tester.test(x, y)
+    accuracy = tester.test(X, y)
     print("Random Forest accuracy : " + str(accuracy))
 
+    '''
     preprocess_data_cnn()
     train_cnn()
     
