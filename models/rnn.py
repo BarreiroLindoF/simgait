@@ -5,6 +5,7 @@ from torch import nn
 from torch.autograd import Variable
 import numpy as np
 import sys
+from statistic_saver import Statistics
 
 # Import markers class to be enable to read data stored in npy files (array of Markers object)
 sys.path.append('C:\\Users\\Lucas\\Desktop\\gaitmasteris\\extraction\\normalize_data\\')
@@ -29,7 +30,7 @@ class RNN(nn.Module):
             hidden_size=hidden_units,         # rnn hidden unit
             num_layers=nb_layer,           # number of rnn layer
             batch_first=True,       # input & output will has batch size as 1s dimension. e.g. (batch, time_step, input_size)
-            dropout=0.25
+            dropout=0.5
         )
         
         """
@@ -39,8 +40,9 @@ class RNN(nn.Module):
             num_layers=nb_layer,      # number of rnn layer
             batch_first=True,         # input & output will has batch size as 1s dimension. e.g. (batch, time_step, input_size)
             dropout=0.5,
-            nonlinearity=''
+            nonlinearity='relu'
         )
+        
         #Rnn
         # batch norm layer if needed
         self.bn1 = nn.BatchNorm1d(num_features=hidden_units)
@@ -56,12 +58,10 @@ class RNN(nn.Module):
         # We need to detach the hidden state to prevent exploding/vanishing gradients
         # This is part of truncated backpropagation through time (BPTT)
         out, hn = self.rnn(x, h0.detach())
-
-        leaky = self.leakyRelu(out[:, -1, :])        
                 
         # Index hidden state of last time step
         # out[:, -1, :] just want last time step hidden states
-        out = self.out(leaky)
+        out = self.out(out[:, -1, :])
         
         
         """
@@ -155,7 +155,7 @@ y_test = np.load("C:\\Users\\Lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y
 
 # Define some hyper parameters
 input_size = seq_lengths_train.max()   # rnn input size / nb frames 
-hidden_units = 32
+hidden_units = 512
 nb_layer = 1
 nb_labels = y_train.shape[1]
 
@@ -175,9 +175,12 @@ y_train = torch.tensor(np.argmax(y_train, axis = 1)) # Get label no one hot enco
 y_test = np.argmax(y_test, axis = 1)
 loss_func = nn.CrossEntropyLoss()
 
-nb_epoch= 10000
-batch_size = 256
+nb_epoch= 100
+batch_size = 512
 time_step = 60   # rnn time step - here this represents that the RNN would be able to keep in memory the the 60 sensors data
+
+# Create a statistic object to store informations during the training 
+stats = Statistics()
 
 # Data Loader for easy mini-batch return in training
 train_loader = DataLoader(dataset=seq_train_tensor, batch_size=batch_size, shuffle=False)
@@ -214,16 +217,16 @@ for epoch in range(nb_epoch):
         if step % 13 == 0:
             pred_y = torch.max(output, 1)[1].cpu().data.numpy().squeeze()
             accuracy = sum(pred_y == y_train[idx_start: idx_end].data.numpy()) / y_train[idx_start: idx_end].data.numpy().size
-            print('Epoch: ', epoch, '| train loss: %.4f' % loss.item(), '| train accuracy : ', accuracy)
+            print('Epoch: ', epoch, '| train loss: %.4f' % loss.item(), '| train accuracy : ', accuracy)            
+            stats.training_accuracy.append(accuracy)
             
             rnn.eval()
-            x_test = seq_test_tensor.view(-1, time_step, input_size).cuda()
+            x_test = seq_test_tensor.view(-1, time_step, input_size)
             test_output = rnn(x_test) # (samples, time_step, input_size)
             pred_y = torch.max(test_output, 1)[1].cpu().data.numpy().squeeze()
             
-            print(pred_y)
-            
             accuracy = sum(pred_y == y_test) / float(y_test.size)
+            stats.validation_accuracy.append(accuracy)
             print('Test accuracy: %.2f' % accuracy)    
         
         idx_start += x.shape[0]
