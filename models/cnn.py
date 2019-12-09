@@ -4,13 +4,18 @@ import torch.nn as nn
 from torch.functional import F
 from model import Cnn
 from sklearn.utils import class_weight
+from loss import FocalLoss
 
 print("Loading data")
-X_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_train.npy")
-y_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_train.npy")
+X_train = np.load(
+    "D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_train.npy")
+y_train = np.load(
+    "D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_train.npy")
 y_train = np.argmax(y_train, axis=1)
-X_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_test.npy")
-y_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_test.npy")
+X_test = np.load(
+    "D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_test.npy")
+y_test = np.load(
+    "D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_test.npy")
 y_test = np.argmax(y_test, axis=1)
 
 # weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
@@ -82,35 +87,34 @@ cnn = nn.Sequential(nn.Conv1d(60, 128, 5),
 # cnn = Cnn()
 cnn.to(device)
 
-
 optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
 print("Starting training")
 
 n_epochs = 1000
 batch_size = 32
+loss = FocalLoss()
 for epoch in range(n_epochs):
 
     permutation = torch.randperm(X_train.shape[0])
     for i in range(0, X_train.shape[0], batch_size):
         optimizer.zero_grad()
 
-        indices = permutation[i:i+batch_size]
+        indices = permutation[i:i + batch_size]
         batch_x, batch_y = X_train[indices], y_train[indices]
         # X_train = torch.from_numpy(X_train).to(device, dtype=torch.float)
         # y_train = torch.from_numpy(y_train).to(device, dtype=torch.long)
         predict = cnn.forward(batch_x)
+
         output = loss(predict, batch_y)
         output.backward()
         optimizer.step()
 
         running_loss = output.item()
 
-
-
     cnn.eval()
     predictions = F.softmax(cnn.forward(X_test))
     _, predicted = torch.max(predictions.data, 1)
     # print(predicted.cpu().detach().numpy())
     correct = (predicted == y_test).sum()
-    print('running_loss:', running_loss, "test accuracy", correct.cpu().numpy() / y_test.shape[0], end="\r" )
+    print('running_loss:', running_loss, "test accuracy", correct.cpu().numpy() / y_test.shape[0], end="\r")
     cnn.train()
