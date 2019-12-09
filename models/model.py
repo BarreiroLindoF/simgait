@@ -70,7 +70,7 @@ class SVM(SupervisedModel):
 class RandomForest(SupervisedModel):
 
     def __init__(self):
-        self.random = RandomForestClassifier(100)
+        self.random = RandomForestClassifier(1)
 
     def fit(self, X, y):
         self.random.fit(X, y)
