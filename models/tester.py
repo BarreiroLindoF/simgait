@@ -5,7 +5,7 @@ Created on Thu Jun 27 16:38:19 2019
 """
 
 from abc import ABC, abstractmethod
-from models import SupervisedModel
+from model import SupervisedModel
 import numpy as np
 import torch.nn as nn
 
@@ -14,7 +14,7 @@ import torch.nn as nn
 class Tester(ABC):
     
     def __init__(self, model):
-        if not isinstance(model, SupervisedModel) or not isinstance(model, nn.Module):
+        if not isinstance(model, SupervisedModel):
             raise TypeError('A SupervisedModel or a Pytorch model has to be used!')
         self.model = model
     

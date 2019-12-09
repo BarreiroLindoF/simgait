@@ -117,7 +117,6 @@ class Extracter:
                 self.angles_names = self.get_labels_angles()
 
         for file_id in range(len(self.files)):
-            print(self.files[file_id])
             dataset = self.files[file_id].split("\\")[-2]
             print("EXTRACTING FILE {} OVER {}".format(file_id, len(self.files)), end='\r')
 
@@ -257,7 +256,12 @@ class Extracter:
 
                 if label[:2] == "A_" or label[:2] == "C_":
                     labels_list_tmp.append(label.lower())
-
+            
+            ########################33
+            #Add diagnostic to patients
+            labels_list_tmp.append("diagnostic")
+            ########################33
+            
             labels_list = list(set(labels_list + labels_list_tmp))
 
         labels_list.sort()
@@ -312,7 +316,6 @@ class Extracter:
         except:
             return None
         markers_data = np.array(markers_data)
-        print(markers_data.shape)
         return markers_data
 
     def get_angles(self, file_path):
@@ -412,6 +415,7 @@ class Extracter:
                         file_.write(", ".join(self.list_labels))
                     else:
                         file_.write(key.upper())
+                        
                     for row in self.data[key]:
                         file_.write("\n")
                         if type(row) is list:
@@ -425,7 +429,7 @@ if __name__ == "__main__":
     datasets = [os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\CP_Gait_1.0"),
                 os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"),
                 os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_TRICEPS_Gait_1.0"),
-                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\Healthy\\Healthy")]
+                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\Healthy")]
 
     keep_pathology = ['CP_Spastic_Uni_Hemiplegia',
                       'CP_Spastic_Bi_Diplegia',
@@ -471,4 +475,4 @@ if __name__ == "__main__":
     # extracter.extract(all_=True)
     extracter.extract(examination=True, diagnostic=True, affected_side=True, gmfcs=False, angles=True, markers=True, events=True, all_=False)
 
-    extracter.save(output_folder="data_extracted")
+    extracter.save(output_folder="C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\data_extracted")
