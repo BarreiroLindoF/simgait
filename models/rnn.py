@@ -18,7 +18,7 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.num_layers = nb_layer
         self.hidden_dim = hidden_units
-        """
+        
         # GRU
         self.gru = nn.GRU(input_size, hidden_size=self.hidden_dim, dropout=0.5,
                           batch_first=True)
@@ -42,7 +42,7 @@ class RNN(nn.Module):
             dropout=0.5,
             nonlinearity='relu'
         )
-        
+        """
         #Rnn
         # batch norm layer if needed
         self.bn1 = nn.BatchNorm1d(num_features=hidden_units)
@@ -50,7 +50,7 @@ class RNN(nn.Module):
         self.out = nn.Linear(hidden_units, nb_labels)
 
     def forward(self, x):
-        
+        """
         # Initialize hidden state with zeros
         # (layer_dim, batch_size, hidden_dim)
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).cuda()
@@ -64,6 +64,7 @@ class RNN(nn.Module):
         out = self.out(out[:, -1, :])
         
         
+        """
         """
         # Lstm
         # Initialize hidden state with zeros
@@ -81,7 +82,6 @@ class RNN(nn.Module):
         
         out = self.out(out[:, -1, :]) 
         """
-        """
         # GRU
         # Initialize hidden state with zeros
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_().cuda()
@@ -93,13 +93,8 @@ class RNN(nn.Module):
         # We need to detach as we are doing truncated backpropagation through time (BPTT)
         # If we don't, we'll backprop all the way to the start even after going through another batch
         out, hidden = self.gru(x)
-        
-        leaky = self.leakyRelu(out[:, -1, :])
-        
-        out = self.out(leaky) 
-        
-        out = self.softmax(out)
-        """
+                        
+        out = self.out(out[:, -1, :])
         
         return out
 
@@ -155,7 +150,7 @@ y_test = np.load("C:\\Users\\Lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y
 
 # Define some hyper parameters
 input_size = seq_lengths_train.max()   # rnn input size / nb frames 
-hidden_units = 512
+hidden_units = 256
 nb_layer = 1
 nb_labels = y_train.shape[1]
 
@@ -230,7 +225,10 @@ for epoch in range(nb_epoch):
             print('Test accuracy: %.2f' % accuracy)    
         
         idx_start += x.shape[0]
-            
+
+stats.model_structure = "GRU with dropout 0.5, timestep 60, hidden units 256, nb layer 1, nb epoch 100, batch size 512, lr 1e-04"
+
+stats.save("gru", "C:\\Users\\lucas\\Desktop\\gaitmasteris\\models\\rnn_stats")
 """
 rnn.eval()
 test_output = rnn(X_test.cuda()) # (samples, time_step, input_size)
