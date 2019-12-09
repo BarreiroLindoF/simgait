@@ -1,22 +1,42 @@
 from model import *
 import json
 from tester import SplitValidationTester
+from sklearn.ensemble import RandomForestClassifier
+
 import numpy as np
 import sys
     
 def main():
     
     
-    X = np.load("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\random_forest_formated\\x.npy")
-    y = np.load("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\random_forest_formated\\y.npy")
-    print(X)
-    print(y)
-    
-    
+    X_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_train.npy")
+    y_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_train.npy")
+    X_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_test.npy")
+    y_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_test.npy")
+
+    X_train = X_train.reshape((X_train.shape[0], -1))
+    X_test = X_test.reshape((X_test.shape[0], -1))
+
+    y_train = np.argmax(y_train, axis=1)
+    y_test = np.argmax(y_test, axis=1)
+
+    print(X_train.shape)
+    print(X_test.shape)
+    print(y_train.shape)
+    print(y_test.shape)
+
     #RandomForest
-    model = RandomForest()
-    tester = SplitValidationTester(model, 0.2)
-    accuracy = tester.test(X, y)
+    model = RandomForestClassifier(1)
+    # 100 DT = 44%
+    # 1000 DT = 46%
+    # 10 DT = 39%
+    # 1 DT no random forest = 36%
+    # 1 DT with RF = 32%
+
+
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    accuracy = np.mean(y_test == predictions)
     print("Random Forest accuracy : " + str(accuracy))
 
     '''
