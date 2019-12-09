@@ -5,6 +5,7 @@ from torch.functional import F
 from model import Cnn
 from sklearn.utils import class_weight
 from loss import FocalLoss
+from statistic_saver import Statistics
 
 print("Loading data")
 X_train = np.load(
@@ -41,22 +42,22 @@ print("Intializating model and parameters")
 loss = nn.CrossEntropyLoss()
 cnn = nn.Sequential(nn.Conv1d(120, 256, 5),
                     # nn.Dropout(0.5),
-                    nn.BatchNorm1d(256),
+                    #nn.BatchNorm1d(256),
                     nn.LeakyReLU(),
                     nn.MaxPool1d(3),
-                    nn.Conv1d(256, 128, 3),
+                    #nn.Conv1d(256, 128, 3),
                     # nn.Dropout(0.5),
-                    nn.BatchNorm1d(128),
-                    nn.LeakyReLU(),
-                    nn.MaxPool1d(3),
-                    nn.Conv1d(128, 64, 3),
+                    #nn.BatchNorm1d(128),
+                    #nn.LeakyReLU(),
+                    #nn.MaxPool1d(3),
+                    nn.Conv1d(256, 64, 3),
                     # nn.BatchNorm1d(32),
                     nn.LeakyReLU(),
                     nn.MaxPool1d(2),
                     Cnn.Flatten(),
-                    nn.Linear(576, 128),
+                    nn.Linear(1984, 128),
                     # nn.Dropout(0.5),
-                    nn.BatchNorm1d(128),
+                    #nn.BatchNorm1d(128),
                     nn.LeakyReLU(),
                     nn.Linear(128, 6))
 """
@@ -90,9 +91,11 @@ cnn.to(device)
 optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
 print("Starting training")
 
-n_epochs = 1000
+statistics = Statistics()
+
+n_epochs = 100
 batch_size = 32
-loss = FocalLoss()
+#loss = FocalLoss()
 for epoch in range(n_epochs):
 
     permutation = torch.randperm(X_train.shape[0])
@@ -116,5 +119,7 @@ for epoch in range(n_epochs):
     _, predicted = torch.max(predictions.data, 1)
     # print(predicted.cpu().detach().numpy())
     correct = (predicted == y_test).sum()
+    statistics.validation_accuracy.append(correct.cpu().numpy() / y_test.shape[0])
     print('running_loss:', running_loss, "test accuracy", correct.cpu().numpy() / y_test.shape[0], end="\r")
     cnn.train()
+statistics.save('cnn_2layer', 'cnns')
