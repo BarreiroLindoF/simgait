@@ -136,7 +136,7 @@ if __name__ == '__main__':
             # Save all to reuse it later
             path = paths_to_save[j] + folder
             if not os.path.exists(path):
-                os.mkdir(path)
+                os.makedirs(path)
             save(x_train_norm, y_train, 'train', path + "\\", mean_train, std_train)
             save(x_test_norm, y_test, 'test', path + "\\")
 

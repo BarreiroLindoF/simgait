@@ -18,7 +18,6 @@ project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
 models_accuracy = []
 
 # Get all directory names for cross validation
-
 dir_names = os.listdir(project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\")
 dir_names = filter(lambda k: 'CV' in k, dir_names)
 # If there are only markers (20 markers x 3 axis = 60), otherwise there are 84 features (24 angles + 20 x 3 markers)

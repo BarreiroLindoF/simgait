@@ -80,6 +80,12 @@ def prepare_and_extract():
     # Get training data and labels
     X, y = construct_dataset(examinations_path)
 
+    # Create directory to save if it doesn't exist
+    path = project_dir + "\\data\\models_prepared\\random_forest_formated"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # Save pre processed data
     np.save(project_dir + "\\data\\models_prepared\\random_forest_formated\\x", X)
     np.save(project_dir + "\\data\\models_prepared\\random_forest_formated\\y", y)
 

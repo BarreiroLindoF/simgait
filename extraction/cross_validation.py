@@ -5,6 +5,7 @@ import numpy as np
 
 from utils import *
 
+
 def split_folds(input_folder, output_folder, k=10, seed=13):
     metadata = "METADATA : \n\nNumber of k-folds = {}".format(k)
     os.makedirs(output_folder, exist_ok=True)
