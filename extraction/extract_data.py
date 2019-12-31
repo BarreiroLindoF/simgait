@@ -5,15 +5,11 @@ import os
 import sys
 
 import numpy as np
-
 from btk import btk
-
-
 
 from utils import is_float, join_path, save_csv
 
-
-
+#Files to be deleted before extraction because we know they contain some issues
 FILES_TO_REMOVE = [
     "00099_00634_20051125-GBNNN-VDNN-15.C3D",
     "00099_00634_20051125-GBNNN-VDNN-16.C3D",
@@ -60,7 +56,7 @@ class Extracter:
             keep_patho = True
         else:
             keep_patho = (
-                self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
+                    self.get_diagnostic(join_path(path, file_name)) in self.keep_pathology
             )
 
         # check if file isn't in remove files
@@ -97,15 +93,15 @@ class Extracter:
         self.metadata_reader = acq.GetMetaData()
 
     def extract(
-        self,
-        examination=False,
-        diagnostic=False,
-        affected_side=False,
-        gmfcs=False,
-        markers=False,
-        angles=False,
-        events=False,
-        all_=False,
+            self,
+            examination=False,
+            diagnostic=False,
+            affected_side=False,
+            gmfcs=False,
+            markers=False,
+            angles=False,
+            events=False,
+            all_=False,
     ):
         self.data = self.init_data(locals())
 
@@ -163,10 +159,10 @@ class Extracter:
             if label.lower() in self.list_labels:
                 value = (
                     meta_subject.FindChild(label)
-                    .value()
-                    .GetInfo()
-                    .ToString()[0]
-                    .replace(" ", "")
+                        .value()
+                        .GetInfo()
+                        .ToString()[0]
+                        .replace(" ", "")
                 )
 
                 if value[-1] in "-+_*°" and len(value) >= 1:
@@ -194,11 +190,11 @@ class Extracter:
         self._update_btk(file_path)
         diag = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("DIAGNOSTIC")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("DIAGNOSTIC")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         return diag
 
@@ -206,11 +202,11 @@ class Extracter:
         self._update_btk(file_path)
         aff_side = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("AFFECTED_SIDE")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("AFFECTED_SIDE")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         aff_side = aff_side.replace("\r", " ")
         if aff_side == "Null":
@@ -222,11 +218,11 @@ class Extracter:
         self._update_btk(file_path)
         gmfcs = (
             self.metadata_reader.FindChild("SUBJECTS")
-            .value()
-            .FindChild("GMFCS")
-            .value()
-            .GetInfo()
-            .ToString()[0]
+                .value()
+                .FindChild("GMFCS")
+                .value()
+                .GetInfo()
+                .ToString()[0]
         )
         return gmfcs
 
@@ -256,12 +252,12 @@ class Extracter:
 
                 if label[:2] == "A_" or label[:2] == "C_":
                     labels_list_tmp.append(label.lower())
-            
+
             ########################33
-            #Add diagnostic to patients
+            # Add diagnostic to patients
             labels_list_tmp.append("diagnostic")
             ########################33
-            
+
             labels_list = list(set(labels_list + labels_list_tmp))
 
         labels_list.sort()
@@ -288,11 +284,11 @@ class Extracter:
             metadata = acq.GetMetaData()
             labels_list_tmp = list(
                 metadata.FindChild("POINT")
-                .value()
-                .FindChild("ANGLES")
-                .value()
-                .GetInfo()
-                .ToString()
+                    .value()
+                    .FindChild("ANGLES")
+                    .value()
+                    .GetInfo()
+                    .ToString()
             )
             labels_list_tmp = [name.replace(" ", "") for name in labels_list_tmp]
             if len(labels_list_tmp) > 16:
@@ -334,20 +330,20 @@ class Extracter:
         event_frames = [acq.GetEvent(event).GetFrame() for event in range(n_events)]
         event_side = list(
             self.metadata_reader.FindChild("EVENT")
-            .value()
-            .FindChild("CONTEXTS")
-            .value()
-            .GetInfo()
-            .ToString()
+                .value()
+                .FindChild("CONTEXTS")
+                .value()
+                .GetInfo()
+                .ToString()
         )
         event_side = [name.replace(" ", "") for name in event_side]
         event_type = list(
             self.metadata_reader.FindChild("EVENT")
-            .value()
-            .FindChild("LABELS")
-            .value()
-            .GetInfo()
-            .ToString()
+                .value()
+                .FindChild("LABELS")
+                .value()
+                .GetInfo()
+                .ToString()
         )
         event_type = [name.replace(" ", "") for name in event_type]
         event_frames, event_side, event_type = zip(
@@ -415,7 +411,7 @@ class Extracter:
                         file_.write(", ".join(self.list_labels))
                     else:
                         file_.write(key.upper())
-                        
+
                     for row in self.data[key]:
                         file_.write("\n")
                         if type(row) is list:
@@ -425,20 +421,25 @@ class Extracter:
 
 
 if __name__ == "__main__":
-    
-    datasets = [os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\CP_Gait_1.0"),
-                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0"),
-                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\ITW_RETRACTION_TRICEPS_Gait_1.0"),
-                os.path.expanduser(os.path.dirname(os.getcwd())  + "\\data\\extracted\\DATASETS\\Healthy")]
+    #Project directory to make this code runnable on any windows system (to be changed on mac)
+    project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
 
+    #Datasets path directories
+    datasets = [project_dir + "\\data\\raw_structured\\CP_Gait_1.0",
+                project_dir + "\\data\\raw_structured\\ITW_RETRACTION_SOL_TRICEPS_Gait_1.0",
+                project_dir + "\\data\\raw_structured\\ITW_RETRACTION_TRICEPS_Gait_1.0",
+                project_dir + "\\data\\raw_structured\\Healthy"]
+
+    #Pathologies to keep for extraction (the others contain a lot of null or nan values)
     keep_pathology = ['CP_Spastic_Uni_Hemiplegia',
                       'CP_Spastic_Bi_Diplegia',
                       'Idiopathic toe walker',
                       'CP_Ataxic',
-                      # 'CP_Spastic_Bi_Quadriplegia',
                       'Polytraumatisme']
 
     extracter = Extracter(datasets, keep_pathology=keep_pathology)
+
+    #Keep only the angles and markers from pelvis to to feet
     extracter.angles_names = [
         "RAnkleAngles",
         "LAnkleAngles",
@@ -472,7 +473,9 @@ if __name__ == "__main__":
         "RSHO",
     ]
 
-    # extracter.extract(all_=True)
-    extracter.extract(examination=True, diagnostic=True, affected_side=True, gmfcs=False, angles=True, markers=True, events=True, all_=False)
+    #Launch the extraction
+    extracter.extract(examination=True, diagnostic=True, affected_side=True, gmfcs=False, angles=True, markers=True,
+                      events=True, all_=False)
 
-    extracter.save(output_folder="C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\data_extracted")
+    #Save all extracted data in .csv and .npy format to read them easier later
+    extracter.save(output_folder=project_dir + "\\data\\extracted")

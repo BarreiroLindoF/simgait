@@ -190,4 +190,9 @@ def split_folds(input_folder, output_folder, k=10, seed=13):
 
 
 if __name__ == "__main__":
-    split_folds('data_cleaned', 'cross_val', k=4)
+
+    project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
+
+    cleaned_raw_data = project_dir + '\\data\\cleaned'
+
+    split_folds(cleaned_raw_data, project_dir + '\\data\\cross_validated', k=4)

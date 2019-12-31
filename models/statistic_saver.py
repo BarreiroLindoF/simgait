@@ -1,30 +1,16 @@
 import json
 import os
 
-
-class Statistics:
-    """
-    All the attributes are public. There is no needed for particular encapsulation and it will make the training code
-    less cluttered.
-    """
-
-    def __init__(self, with_timestamp=True) -> None:
+# Class containing a list of statistics model and the accuracy mean over each validation set
+class CrossValStatistics:
+    def __init__(self) -> None:
         super().__init__()
-        # Loss over time
-        self.loss: list = []
 
-        # Accuracy during training. Can be by epoch or by batch
-        self.training_accuracy: list = []
-        self.validation_accuracy: list = []
+        # List of all cross validated statistic model
+        self.stat_models: list = []
 
-        # Only one value because only tested in the end
-        self.testing_accuracy: float = -1
-
-        # Anything you might want to add about the model, training process, or anything useful to understand the data
-        self.other_comments: str = None
-
-        # A description of the model architecture (layers, batch_norm, drop out, input size, etc)
-        self.model_structure: str = None
+        # Accuracy mean over cross validated models list
+        self.cross_val_accuracy: float = -1
 
     @staticmethod
     def load(filename: str, folder: str = None):
@@ -61,7 +47,35 @@ class Statistics:
         if not os.path.exists(folder):
             os.makedirs(folder)
         with open(os.path.join(folder, filename + '.json'), 'w') as f:
-            json.dump(self.__dict__, f)
+            json.dump(self.__dict__, f, default=lambda x: x.__dict__)
+
+# Statistic class containing training history of a model
+class Statistics:
+    """
+    All the attributes are public. There is no needed for particular encapsulation and it will make the training code
+    less cluttered.
+    """
+
+    def __init__(self, with_timestamp=True) -> None:
+        super().__init__()
+        # Loss over time
+        self.loss: list = []
+
+        # Accuracy during training. Can be by epoch or by batch
+        self.training_accuracy: list = []
+        self.validation_accuracy: list = []
+
+        # Validation loss during the training
+        self.validation_loss: list = []
+
+        # Only one value because only tested in the end
+        self.testing_accuracy: float = -1
+
+        # Anything you might want to add about the model, training process, or anything useful to understand the data
+        self.other_comments: str = None
+
+        # A description of the model architecture (layers, batch_norm, drop out, input size, etc)
+        self.model_structure: str = None
 
 
 if __name__ == '__main__':

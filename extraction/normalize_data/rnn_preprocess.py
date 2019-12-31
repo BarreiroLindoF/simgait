@@ -1,23 +1,9 @@
 import numpy as np
+import os
 import sys
 import cv2
 from utils import *
-import pickle
-
-# Directory paths
-cv_paths = "C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\extracted\\cross_val"
-cv_1_path= cv_paths + "\\CV_1"
-cv_2_path= cv_paths + "\\CV_2"
-
-# Train paths
-files_train_csv_path = cv_2_path + "\\files_train.csv"
-y_train_csv_path = cv_2_path + "\\y_train.csv"
-markers_train_path = cv_2_path + "\\markers\\train\\"
-
-# Test paths
-files_test_csv_path = cv_2_path + "\\files_test.csv"
-y_test_csv_path = cv_2_path + "\\y_test.csv"
-markers_test_path = cv_2_path + "\\markers\\test\\"      
+from pathlib import Path
 
 # Construct dataset with fixed nb frames to 100
 def construct_dataset (files_csv_path, y_csv_path, markers_path) :
@@ -73,7 +59,7 @@ class Markers :
         self.markers = markers
 
 
-# Construct dataset with fixed nb frames to 100
+# Construct dataset with dynamic nb of frames
 def construct_dataset_dynamic_frames (files_csv_path, y_csv_path, markers_path) :
     files_csv_path = load_csv(files_csv_path, dtype="U100", skiprows=0)
     y_csv_path = load_csv(y_csv_path, skiprows=0)
@@ -111,9 +97,8 @@ def construct_dataset_dynamic_frames (files_csv_path, y_csv_path, markers_path) 
 
     return batch, y
 
+# Normalize data with fixed number of frame
 def normalize_data(X, mean=None, std=None) :
-    
-    
     if mean is None and std is None:
         mean = np.mean(X, axis=(0, 2))
         X = X - mean[np.newaxis, :, np.newaxis]
@@ -129,6 +114,7 @@ def normalize_data(X, mean=None, std=None) :
     
         return X
 
+# Normalize data with number of frames dynamic
 def normalize_dynamic_data(X, mean=None, std=None) :
     
     # Create zeros matrix with as many row as there are frames in all the dataset and with as many column as there are markers
@@ -173,27 +159,44 @@ def normalize_dynamic_data(X, mean=None, std=None) :
 
 
 def prepare_and_extract () :
-    
+    # Project directory to make this code runnable on any windows system (to be changed on mac)
+    project_dir = os.path.expanduser(os.path.dirname(Path(os.getcwd()).parent))
+
+    # Directory paths
+    cv_paths = project_dir + "\\data\\cross_validated"
+    cv_1_path = cv_paths + "\\CV_1"
+    cv_2_path = cv_paths + "\\CV_2"
+
+    # Train paths
+    files_train_csv_path = cv_2_path + "\\files_train.csv"
+    y_train_csv_path = cv_2_path + "\\y_train.csv"
+    markers_train_path = cv_2_path + "\\markers\\train\\"
+
+    # Test paths
+    files_test_csv_path = cv_2_path + "\\files_test.csv"
+    y_test_csv_path = cv_2_path + "\\y_test.csv"
+    markers_test_path = cv_2_path + "\\markers\\test\\"
+
     # Dynamic nb frames
     # Get training data and labels 
-    X, y = construct_dataset_dynamic_frames(files_train_csv_path, y_train_csv_path, markers_train_path)
+    x, y = construct_dataset_dynamic_frames(files_train_csv_path, y_train_csv_path, markers_train_path)
     
     # Normalize the data and get back their mean and std
-    X_norm, mean, std = normalize_dynamic_data(X)
+    x_norm, mean, std = normalize_dynamic_data(x)
         
     # Save dataset and y to be able reload after
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\x_train_norm_dynamic", X_norm)
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y_train", y)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\x_train_norm_dynamic", x_norm)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\y_train", y)
     
     # Get testing data and labels 
-    X, y = construct_dataset_dynamic_frames(files_test_csv_path, y_test_csv_path, markers_test_path)
+    x, y = construct_dataset_dynamic_frames(files_test_csv_path, y_test_csv_path, markers_test_path)
     
     # Normalize the data with the training mean and std to apply the same normalization
-    X_norm, _, _ = normalize_dynamic_data(X, mean, std)
+    x_norm, _, _ = normalize_dynamic_data(x, mean, std)
         
     # Save dataset and y to be able reload after
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\x_test_norm_dynamic", X_norm)
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y_test", y)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\x_test_norm_dynamic", x_norm)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\y_test", y)
     
     """
     # Fixed nb frames
@@ -204,8 +207,8 @@ def prepare_and_extract () :
     X_norm, mean, std = normalize_data(X)
     
     # Save dataset and y to be able reload after
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\x_train_norm", X_norm)
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y_train", y)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\x_train_norm", X_norm)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\y_train", y)
     
     
     # Get testing data and labels 
@@ -215,9 +218,10 @@ def prepare_and_extract () :
     X_norm = normalize_data(X, mean, std)
     
     # Save dataset and y to be able reload after
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\x_test_norm", X_norm)
-    np.save("C:\\Users\\lucas\\Desktop\\gaitmasteris\\data\\rnn_formated\\y_test", y)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\x_test_norm", X_norm)
+    np.save(project_dir + "\\data\\models_prepared\\rnn_formated\\y_test", y)
     """
-    
-if __name__ ==  '__main__':
+
+
+if __name__ == '__main__':
     prepare_and_extract()
