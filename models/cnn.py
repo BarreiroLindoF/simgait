@@ -7,27 +7,61 @@ from sklearn.utils import class_weight
 from loss import FocalLoss
 from statistic_saver import Statistics, CrossValStatistics
 import os
+import argparse
 
+#########################################
+# Parse user argument and set parameters
+argparser = argparse.ArgumentParser()
+argparser.add_argument("--model_type")
+arg_model_type = argparser.parse_args().model_type
+
+if arg_model_type == "100M":
+    model_directory = "Width100MarkersOnly"
+    # If there are only markers (20 markers x 3 axis = 60), otherwise there are 84 features (24 angles + 20 x 3 markers)
+    features_size = 60
+    flatten_size = 960
+elif arg_model_type == "200MA":
+    model_directory = "Width200MarkersAngles"
+    # If there are only markers (20 markers x 3 axis = 60), otherwise there are 84 features (24 angles + 20 x 3 markers)
+    features_size = 84
+    flatten_size = 1984
+elif arg_model_type == "200M":
+    model_directory = "Width200MarkersOnly"
+    # If there are only markers (20 markers x 3 axis = 60), otherwise there are 84 features (24 angles + 20 x 3 markers)
+    features_size = 60
+    flatten_size = 1984
+#########################################
+
+#########################################
+# Global parameters
 # Set seed to have reproductible results
 torch.manual_seed(0)
 
 # Project directory to make this code runnable on any windows system (to be changed on mac)
-project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
 
+project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
 # List to save all cross validated model validation accuracy
 models_accuracy = []
 
 # Get all directory names for cross validation
-dir_names = os.listdir(project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\")
+dir_names = os.listdir(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\")
 dir_names = filter(lambda k: 'CV' in k, dir_names)
-# If there are only markers (20 markers x 3 axis = 60), otherwise there are 84 features (24 angles + 20 x 3 markers)
-features_size = 60
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+cross_statistics = CrossValStatistics()
+#########################################
+
+#########################################
+# Hyper parameters
+n_epochs = 100
+batch_size = 32
+#########################################
 
 # weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
 # weights = np.append(weights, 0)
 # weights[4] = 20
 # print(weights)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # weights = torch.from_numpy(weights).to(device, dtype=torch.float)
 
@@ -54,7 +88,7 @@ cnn = nn.Sequential(nn.Conv1d(features_size, 256, 5),
                     nn.LeakyReLU(),
                     nn.MaxPool1d(2),
                     Cnn.Flatten(),
-                    nn.Linear(960, 128),
+                    nn.Linear(flatten_size, 128),
                     # nn.Dropout(0.5),
                     #nn.BatchNorm1d(128),
                     nn.LeakyReLU(),
@@ -63,12 +97,8 @@ cnn = nn.Sequential(nn.Conv1d(features_size, 256, 5),
 cnn.to(device)
 init_weights = cnn.state_dict()
 optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
+
 print("Starting training")
-
-cross_statistics = CrossValStatistics()
-
-n_epochs = 100
-batch_size = 32
 
 # First loop to load each cross validated dataset
 for folder in dir_names:
@@ -79,12 +109,12 @@ for folder in dir_names:
 
     print("Loading data")
     X_train = np.load(
-        project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\" + folder + "\\1d_X_train.npy")
+        project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_X_train.npy")
     y_train = np.load(
-        project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\" + folder + "\\1d_y_train.npy")
+        project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_y_train.npy")
     y_train = np.argmax(y_train, axis=1)
-    X_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\" + folder + "\\1d_X_test.npy")
-    y_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\Width100MarkersOnly\\" + folder + "\\1d_y_test.npy")
+    X_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_X_test.npy")
+    y_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_y_test.npy")
     y_test = np.argmax(y_test, axis=1)
     print(X_train.shape)
     print("Transfering data to GPU")
@@ -145,14 +175,14 @@ for folder in dir_names:
     # Store the model history
     cross_statistics.stat_models.append(statistics)
 
-    print("\nFinal accuracy : ", models_accuracy)
+    print("\nAccuracy with minimum loss for each Cross validation set : ", models_accuracy)
 
 # Store the mean of all cross validation models as the reference accuracy for this model's architecture
 cross_statistics.cross_val_accuracy = np.mean(models_accuracy)
 
-path = 'cnns\\Width100MarkersOnly\\'
+path = 'cnn_results\\' + model_directory + '\\'
 if not os.path.exists(path):
-    os.mkdir(path)
+    os.makedirs(path)
 # Save the cross validated model's architecture in a json file
 cross_statistics.save('cnn_2layer', path)
 
