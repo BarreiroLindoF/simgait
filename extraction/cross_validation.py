@@ -11,6 +11,7 @@ def split_folds(input_folder, output_folder, k=10, seed=13):
     os.makedirs(output_folder, exist_ok=True)
 
     files = load_csv(join_path(input_folder, 'files.csv'), dtype=str, skiprows=0)
+
     for f_idx in range(len(files)):
         name_splitted = files[f_idx].split('.')
         files[f_idx] = name_splitted[0] + '.' + name_splitted[1].upper()
@@ -19,6 +20,7 @@ def split_folds(input_folder, output_folder, k=10, seed=13):
 
     diagnostics = load_csv(join_path(input_folder, 'y.csv'), dtype=str, skiprows=0)
     dict_clean = {}
+
     for idx in range(len(diagnostics)):
         diag = ''.join(diagnostics[idx])
         if diag not in dict_clean.keys():

@@ -8,11 +8,15 @@ from loss import FocalLoss
 from statistic_saver import Statistics, CrossValStatistics
 import os
 import argparse
+import math
 
 #########################################
 # Parse user argument and set parameters
 argparser = argparse.ArgumentParser()
-argparser.add_argument("--model_type")
+argparser.add_argument("--model_type", help="The type of the model to be called. Can be 100M, 200MA or 200M."
+                                            "M is markers only, MA is Markers and Angles. 100 and 200 is the size")
+argparser.add_argument("--nb_epochs", help="Number of epochs to do. Must be an integer")
+nb_epochs = argparser.parse_args().nb_epochs
 arg_model_type = argparser.parse_args().model_type
 
 if arg_model_type == "100M":
@@ -49,12 +53,18 @@ dir_names = filter(lambda k: 'CV' in k, dir_names)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# Variables to store mcNemar stats
+correct_preds = 0
+wrong_preds = 0
+#List to save all test accuracy (each cross validation data set has a test set)
+lst_test_accuracy = []
+
 cross_statistics = CrossValStatistics()
 #########################################
 
 #########################################
 # Hyper parameters
-n_epochs = 100
+n_epochs = nb_epochs
 batch_size = 32
 #########################################
 
@@ -108,30 +118,44 @@ for folder in dir_names:
     cnn.load_state_dict(init_weights)
 
     print("Loading data")
-    X_train = np.load(
+    x_train = np.load(
         project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_X_train.npy")
     y_train = np.load(
         project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_y_train.npy")
     y_train = np.argmax(y_train, axis=1)
-    X_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_X_test.npy")
-    y_test = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_y_test.npy")
-    y_test = np.argmax(y_test, axis=1)
-    print(X_train.shape)
-    print("Transfering data to GPU")
-    X_train = torch.from_numpy(X_train).to(device, dtype=torch.float)
+    x_validation = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_X_test.npy")
+    y_validation = np.load(project_dir + "\\data\\models_prepared\\cnn_formated\\" + model_directory + "\\" + folder + "\\1d_y_test.npy")
+    y_validation = np.argmax(y_validation, axis=1)
+
+    # Define validation and test data set as 50% of the total test data set of the current cross validation data
+    length_validation = math.trunc(x_validation.shape[0] / 2)
+    length_test = x_validation.shape[0] - length_validation
+
+    # Define test set for the current cross validation data
+    x_test = x_validation[:length_test, :, :]
+    y_test = y_validation[:length_test]
+
+    # Define validation set for the current cross validation data
+    x_validation = x_validation[length_validation:, :, :]
+    y_validation = y_validation[length_validation:]
+
+    print("Transfering data to GPU or CPU depending on PC hardware available")
+    x_train = torch.from_numpy(x_train).to(device, dtype=torch.float)
     y_train = torch.from_numpy(y_train).to(device, dtype=torch.long)
-    X_test = torch.from_numpy(X_test).to(device, dtype=torch.float)
+    x_validation = torch.from_numpy(x_validation).to(device, dtype=torch.float)
+    y_validation = torch.from_numpy(y_validation).to(device, dtype=torch.long)
+    x_test = torch.from_numpy(x_test).to(device, dtype=torch.float)
     y_test = torch.from_numpy(y_test).to(device, dtype=torch.long)
 
     #loss = FocalLoss()
     for epoch in range(n_epochs):
 
-        permutation = torch.randperm(X_train.shape[0])
-        for i in range(0, X_train.shape[0], batch_size):
+        permutation = torch.randperm(x_train.shape[0])
+        for i in range(0, x_train.shape[0], batch_size):
             optimizer.zero_grad()
 
             indices = permutation[i:i + batch_size]
-            batch_x, batch_y = X_train[indices], y_train[indices]
+            batch_x, batch_y = x_train[indices], y_train[indices]
             # X_train = torch.from_numpy(X_train).to(device, dtype=torch.float)
             # y_train = torch.from_numpy(y_train).to(device, dtype=torch.long)
             predict = cnn.forward(batch_x)
@@ -154,23 +178,36 @@ for folder in dir_names:
         cnn.eval()
         with torch.no_grad():
             # Calculate validation accuracy
-            predict_val = cnn.forward(X_test)
+            predict_val = cnn.forward(x_validation)
             validation_predictions = F.softmax(predict_val)
             _, predicted = torch.max(validation_predictions.data, 1)
-            correct = (predicted == y_test).sum()
+            correct = (predicted == y_validation).sum()
             # Store validation accuracy
-            statistics.validation_accuracy.append(correct.cpu().numpy() / y_test.shape[0])
+            statistics.validation_accuracy.append(correct.cpu().numpy() / y_validation.shape[0])
             # Calculate validation loss
-            validation_loss = loss(predict_val, y_test)
+            validation_loss = loss(predict_val, y_validation)
             # Store validation loss
             statistics.validation_loss.append(validation_loss.item())
 
-        print('training_loss:', training_loss, "validation accuracy", correct.cpu().numpy() / y_test.shape[0], end="\r")
+        print('training_loss:', training_loss, "validation accuracy", correct.cpu().numpy() / y_validation.shape[0], end="\r")
         cnn.train()
 
     # Store the best validation accuracy in a list (where the validation loss is the lowest)
     best_model_idx = np.argmin(statistics.validation_loss)
     models_accuracy.append(statistics.validation_accuracy[best_model_idx])
+
+    # Compute accuracy on test set
+    cnn.eval()
+    test_output = cnn(x_test)
+    pred_y = torch.max(test_output, 1)[1].cpu().data.numpy().squeeze()
+
+    # Store test accuracy
+    test_accuracy = sum(pred_y == y_test.cpu().data.numpy()) / y_test.cpu().data.numpy().shape[0]
+    lst_test_accuracy.append(test_accuracy)
+    statistics.test_accuracy = test_accuracy
+
+    # Store correct and wrong predictions on current CV for McNemar contingency table
+    cross_statistics.predictionResults.append((pred_y == y_test.cpu().data.numpy()).tolist())
 
     # Store the model history
     cross_statistics.stat_models.append(statistics)
@@ -178,7 +215,11 @@ for folder in dir_names:
     print("\nAccuracy with minimum loss for each Cross validation set : ", models_accuracy)
 
 # Store the mean of all cross validation models as the reference accuracy for this model's architecture
-cross_statistics.cross_val_accuracy = np.mean(models_accuracy)
+cross_statistics.validation_mean_accuracy = np.mean(models_accuracy)
+
+# Store the mean accuracy over all cross validated models to have the general testing accuracy on this current model
+cross_statistics.test_mean_accuracy = np.mean(lst_test_accuracy)
+print('Test accuracy mean : ', np.mean(lst_test_accuracy))
 
 path = 'cnn_results\\' + model_directory + '\\'
 if not os.path.exists(path):

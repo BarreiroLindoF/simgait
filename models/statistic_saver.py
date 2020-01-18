@@ -9,8 +9,14 @@ class CrossValStatistics:
         # List of all cross validated statistic model
         self.stat_models: list = []
 
-        # Accuracy mean over cross validated models list
-        self.cross_val_accuracy: float = -1
+        # Accuracy mean over validation sets
+        self.validation_mean_accuracy: float = -1
+
+        # Accuracy mean over test sets
+        self.test_mean_accuracy: float = -1
+
+        # Variables for McNemar contingency table storing correct and wrong total of predictions over all cross validated set for a model
+        self.predictionResults: list = []
 
     @staticmethod
     def load(filename: str, folder: str = None):
@@ -25,14 +31,12 @@ class CrossValStatistics:
             folder = '.'
         with open(os.path.join(folder, filename + '.json'), 'r') as f:
             data = json.load(f)
-            statistics = Statistics()
-            statistics.loss = data['loss']
-            statistics.training_accuracy = data['training_accuracy']
-            statistics.validation_accuracy = data['validation_accuracy']
-            statistics.testing_accuracy = data['testing_accuracy']
-            statistics.other_comments = data['other_comments']
-            statistics.model_structure = data['model_structure']
-            return statistics
+            cross_statistics = CrossValStatistics()
+            cross_statistics.stat_models = data['stat_models']
+            cross_statistics.validation_mean_accuracy = data['validation_mean_accuracy']
+            cross_statistics.test_mean_accuracy = data['test_mean_accuracy']
+            cross_statistics.predictionResults = data['predictionResults']
+            return cross_statistics
 
     def save(self, filename: str, folder: str = None):
         """
@@ -68,8 +72,8 @@ class Statistics:
         # Validation loss during the training
         self.validation_loss: list = []
 
-        # Only one value because only tested in the end
-        self.testing_accuracy: float = -1
+        # Only one value because only tested at the end
+        self.test_accuracy: float = -1
 
         # Anything you might want to add about the model, training process, or anything useful to understand the data
         self.other_comments: str = None

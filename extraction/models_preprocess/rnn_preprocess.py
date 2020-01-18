@@ -60,7 +60,7 @@ class Markers :
 
 
 # Construct dataset with dynamic nb of frames
-def construct_dataset_dynamic_frames (files_csv_path, y_csv_path, markers_path) :
+def construct_dataset_dynamic_frames(files_csv_path, y_csv_path, markers_path) :
     files_csv_path = load_csv(files_csv_path, dtype="U100", skiprows=0)
     y_csv_path = load_csv(y_csv_path, skiprows=0)
     batch = None
