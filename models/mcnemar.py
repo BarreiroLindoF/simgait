@@ -28,17 +28,17 @@ def get_frequencies(model_1, model_2) :
 # Make the comparison between all 3 best RNN types
 # Best RNN directories
 best_rnn_dir = join(project_dir, "models", "rnn_results", "static_length")
-best_lstm_dir = join(project_dir, "models", "rnn_results", "dynamic_length")
-best_gru_dir = join(project_dir, "models", "rnn_results", "dynamic_length")
+best_rnn2_dir = join(project_dir, "models", "rnn_results", "dynamic_length")
+best_gru_dir = join(project_dir, "models", "rnn_results", "static_length")
 
 # Load three best recurrent models history
 cross_statistics_rnn = cross_statistics.load(filename="RNN", folder=best_rnn_dir)
-cross_statistics_lstm = cross_statistics.load(filename="LSTM", folder=best_lstm_dir)
+cross_statistics_rnn2 = cross_statistics.load(filename="RNN", folder=best_rnn2_dir)
 cross_statistics_gru = cross_statistics.load(filename="GRU", folder=best_gru_dir)
 
 # Get correct and wrong predictions for each model history
 predictions_rnn = np.concatenate(cross_statistics_rnn.predictionResults)
-predictions_lstm = np.concatenate(cross_statistics_lstm.predictionResults)
+predictions_lstm = np.concatenate(cross_statistics_rnn2.predictionResults)
 predictions_gru = np.concatenate(cross_statistics_gru.predictionResults)
 
 

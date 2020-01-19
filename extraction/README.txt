@@ -1,3 +1,12 @@
+Before executing any extraction script, make sure to have a directory called "data" in the root of the project. Inside this directory make sure to have a directory called "raw_structured".
+"raw_structured" directory may have four subdirectory :
+- CP_Gait_1.0
+- Healthy
+- ITW_RETRACTION_SOL_TRICEPS_Gait_1.0
+- ITW_RETRACTION_TRICEPS_Gait_1.0
+
+containing .c3d files in them.
+
 In order to extract, clean the data and create a cross validation dataset, please execute the scripts in this order : 
 
 1. extract_data.py

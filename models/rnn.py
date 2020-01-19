@@ -59,7 +59,7 @@ class GRU(nn.Module):
         super(GRU, self).__init__()
         self.num_layers = nb_layer
         self.hidden_dim = hidden_units
-        self.gru = nn.GRU(input_size, hidden_size=self.hidden_dim, dropout=dropout,
+        self.gru = nn.GRU(input_size, num_layers=nb_layer, hidden_size=self.hidden_dim, dropout=dropout,
                           batch_first=True)
         self.out = nn.Linear(hidden_units, nb_labels)
 
@@ -215,9 +215,9 @@ wrong_preds = 0
 
 #########################################
 # Define hyper-parameters
-hidden_units = 200
+hidden_units = 300
 dropout = 0.3
-nb_layer = 5
+nb_layer = 6
 lr = 1e-04  # learning rate
 nb_epoch = 200
 batch_size = 128
@@ -347,7 +347,7 @@ for folder in dir_names:
                 if validation_loss.item() < min_loss:
                     best_state = model.state_dict()
                     min_loss = validation_loss.item()
-                    print(min_loss)
+                    print('New min loss on validation set : ', min_loss)
 
                 print('Epoch: ', epoch, '| train loss: %.4f' % training_loss, '| train accuracy : ', train_accuracy)
                 print('Validation loss: %.4f' % validation_loss, '| Validation accuracy : ', accuracy, end="\r")
@@ -357,7 +357,7 @@ for folder in dir_names:
     #statistics.model_structure = "GRU with dropout 0.5, timestep 60, hidden units 256, nb layer 1, nb epoch 100, batch size 512, lr 1e-04"
     statistics.model_structure = '' + str(model_type) + ' with ' + str(time_step) + ' timesteps, ' + str(hidden_units) + ' hidden units, ' + \
                                  str(nb_layer) + ' layer, ' + str(nb_epoch) + ' epochs, ' + ' batch size of ' + str(batch_size) + ', learning rate of ' + str(lr) + \
-                                 ', with ' + length_type + ' length of data and ' + padding_type + ' type.'
+                                 ', with ' + length_type + ' length of data, dropout of ' + str(dropout) + ' and ' + padding_type + ' type.'
 
     # Store the best validation accuracy in a list (where the validation loss is the lowest)
     best_model_idx = np.argmin(statistics.validation_loss)
