@@ -219,7 +219,7 @@ hidden_units = 200
 dropout = 0.3
 nb_layer = 5
 lr = 1e-04  # learning rate
-nb_epoch = 30
+nb_epoch = 200
 batch_size = 128
 time_step = 60  # rnn time step - here this represents that the RNN would be able to keep in memory the the 60 sensors data
 loss_func = nn.CrossEntropyLoss()
@@ -285,6 +285,7 @@ for folder in dir_names:
     train_loader = DataLoader(dataset=x_train, batch_size=batch_size, shuffle=False)
 
     statistics = Statistics()
+    min_loss = 1000
 
     for epoch in range(nb_epoch):
         idx_start = 0
@@ -342,6 +343,12 @@ for folder in dir_names:
                 # Store validation loss
                 statistics.validation_loss.append(validation_loss.item())
 
+                # Save model dict if loss on validation set is less than before
+                if validation_loss.item() < min_loss:
+                    best_state = model.state_dict()
+                    min_loss = validation_loss.item()
+                    print(min_loss)
+
                 print('Epoch: ', epoch, '| train loss: %.4f' % training_loss, '| train accuracy : ', train_accuracy)
                 print('Validation loss: %.4f' % validation_loss, '| Validation accuracy : ', accuracy, end="\r")
 
@@ -358,6 +365,8 @@ for folder in dir_names:
 
     # Compute accuracy on test set
     model.eval()
+    # Load the best state before testing the model
+    model.load_state_dict(best_state)
     test_output = model(x_test)
     pred_y = torch.max(test_output, 1)[1].cpu().data.numpy().squeeze()
 
@@ -378,6 +387,7 @@ cross_statistics.validation_mean_accuracy = np.mean(best_models_val_accuracy)
 # Store the mean accuracy over all cross validated models to have the general testing accuracy on this current model
 cross_statistics.test_mean_accuracy = np.mean(lst_test_accuracy)
 print('\nTest accuracy mean : ', np.mean(lst_test_accuracy))
+print('\nTest accuracy : ', lst_test_accuracy)
 
 path = 'rnn_results\\' + model_directory + '\\'
 if not os.path.exists(path):
