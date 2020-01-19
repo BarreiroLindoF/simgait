@@ -2,6 +2,7 @@ from statistic_saver import Statistics, CrossValStatistics
 import os
 from os.path import join
 import numpy as np
+import pandas as pd
 
 # Project directory to make this code runnable on any windows system (to be changed on mac)
 project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
@@ -41,17 +42,33 @@ predictions_rnn = np.concatenate(cross_statistics_rnn.predictionResults)
 predictions_lstm = np.concatenate(cross_statistics_rnn2.predictionResults)
 predictions_gru = np.concatenate(cross_statistics_gru.predictionResults)
 
-
 # Observed frequencies (m1_c_m2_c = model 1 nb of correct and correct in model 2 too)
 m1_c_m2_c, m1_c_m2_w, m1_w_m2_c, m1_w_m2_w, p_value = get_frequencies(predictions_rnn, predictions_lstm)
-print('McNemar significiance between RNN and LSTM : ', p_value)
+print('RNN vs LSTM : ')
+data = [('correct','wrong'), (m1_c_m2_c, m1_w_m2_c), (m1_c_m2_w, m1_w_m2_w)]
+contingency_table = pd.DataFrame(data, columns = ['RNN', 'RNN'], index=['','LSTM correct', 'LSTM wrong'])
+print('Contingency table :')
+print(contingency_table)
+print('p-value : ', p_value)
+
 m1_c_m2_c, m1_c_m2_w, m1_w_m2_c, m1_w_m2_w, p_value = get_frequencies(predictions_rnn, predictions_gru)
-print('McNemar significiance between RNN and GRU : ', p_value)
+print('RNN vs GRU : ')
+data = [('correct','wrong'), (m1_c_m2_c, m1_w_m2_c), (m1_c_m2_w, m1_w_m2_w)]
+contingency_table = pd.DataFrame(data, columns = ['RNN', 'RNN'], index=['','GRU correct', 'GRU wrong'])
+print('Contingency table :')
+print(contingency_table)
+print('p-value : ', p_value)
+
 m1_c_m2_c, m1_c_m2_w, m1_w_m2_c, m1_w_m2_w, p_value = get_frequencies(predictions_lstm, predictions_gru)
-print('McNemar significiance between LSTM and GRU : ', p_value)
+print('LSTM vs GRU : ')
+data = [('correct','wrong'), (m1_c_m2_c, m1_w_m2_c), (m1_c_m2_w, m1_w_m2_w)]
+contingency_table = pd.DataFrame(data, columns = ['LSTM', 'LSTM'], index=['','GRU correct', 'GRU wrong'])
+print('Contingency table :')
+print(contingency_table)
+print('p-value : ', p_value)
 
 # Make the comparison between all best CNN types
 # Best CNN directories
 ########################################
-# Just copy code between line 34-51 and adapt for cnn (like directories path etc)
+# Just copy code between line 29-68 and adapt for cnn (like directories path, model name etc)
 ########################################
