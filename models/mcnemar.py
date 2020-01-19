@@ -70,5 +70,12 @@ print('p-value : ', p_value)
 # Make the comparison between all best CNN types
 # Best CNN directories
 ########################################
-# Just copy code between line 29-68 and adapt for cnn (like directories path, model name etc)
+# Just copy code between line 31-68 and adapt for cnn (like directories path, model name etc)
+########################################
+
+
+# Make the comparison between all best RF types
+# Best Random forest directories
+########################################
+# Just copy code between line 31-68 and adapt for rf (like directories path, model name etc)
 ########################################

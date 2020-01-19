@@ -2,42 +2,55 @@ from model import *
 import json
 from tester import SplitValidationTester
 from sklearn.ensemble import RandomForestClassifier
+import os
 
 import numpy as np
 import sys
-    
+
+# Project directory to make this code runnable on any windows system (to be changed on mac)
+project_dir = os.path.expanduser(os.path.dirname(os.getcwd()))
+
+def get_cv_dir_names(directory):
+    # Get all directory names for cross validation
+    dir_names = os.listdir(os.path.join(project_dir, "data", "models_prepared", "cnn_formated",  directory))
+    dir_names = filter(lambda k: 'CV' in k, dir_names)
+
+    return dir_names
+
+
 def main():
-    
-    
-    X_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_train.npy")
-    y_train = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_train.npy")
-    X_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_X_test.npy")
-    y_test = np.load("D:\\Users\\Flavio\\Documents\\Research Project\\gait\\data\\normalized\\Width200MarkersAngles\\CV2\\1d_y_test.npy")
 
-    X_train = X_train.reshape((X_train.shape[0], -1))
-    X_test = X_test.reshape((X_test.shape[0], -1))
+    dir_names = get_cv_dir_names("Width100MarkersOnly")
 
-    y_train = np.argmax(y_train, axis=1)
-    y_test = np.argmax(y_test, axis=1)
+    lst_accuracy = []
 
-    print(X_train.shape)
-    print(X_test.shape)
-    print(y_train.shape)
-    print(y_test.shape)
+    for folder in dir_names:
+        X_train = np.load(os.path.join(project_dir, "data", "models_prepared", "cnn_formated", "Width100MarkersOnly", folder, "1d_X_train.npy"))
+        y_train = np.load(os.path.join(project_dir, "data", "models_prepared", "cnn_formated", "Width100MarkersOnly", folder, "1d_y_train.npy"))
+        X_test = np.load(os.path.join(project_dir, "data", "models_prepared", "cnn_formated", "Width100MarkersOnly", folder, "1d_X_test.npy"))
+        y_test = np.load( os.path.join(project_dir, "data", "models_prepared", "cnn_formated", "Width100MarkersOnly", folder, "1d_y_test.npy"))
 
-    #RandomForest
-    model = RandomForestClassifier(1)
-    # 100 DT = 44%
-    # 1000 DT = 46%
-    # 10 DT = 39%
-    # 1 DT no random forest = 36%
-    # 1 DT with RF = 32%
+        X_train = X_train.reshape((X_train.shape[0], -1))
+        X_test = X_test.reshape((X_test.shape[0], -1))
 
+        y_train = np.argmax(y_train, axis=1)
+        y_test = np.argmax(y_test, axis=1)
 
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    accuracy = np.mean(y_test == predictions)
-    print("Random Forest accuracy : " + str(accuracy))
+        #RandomForest
+        model = RandomForestClassifier(1)
+        # 100 DT = 44%
+        # 1000 DT = 46%
+        # 10 DT = 39%
+        # 1 DT no random forest = 36%
+        # 1 DT with RF = 32%
+
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
+        accuracy = np.mean(y_test == predictions)
+        lst_accuracy.append(accuracy)
+        print("Random Forest accuracy for ", folder, " : " + str(accuracy))
+
+    print("Random Forest accuracy mean : ", np.mean(np.asarray(lst_accuracy)))
 
     '''
     preprocess_data_cnn()
