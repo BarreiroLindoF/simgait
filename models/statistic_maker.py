@@ -66,11 +66,9 @@ plt.legend(('RNN', 'LSTM', 'GRU'))
 tikzplotlib.save('validationAllModels.tex')
 plt.show()
 
-# Plot the best model training and validation accuracy with a convolution to make it smoother
-y = np.convolve(gru_mean_val_accuracy, [0.3, 0.3, 0.3])[:-2]
-plt.plot(y, color="blue")
-y = np.convolve(gru_mean_train_accuracy, [0.3, 0.3, 0.3])[:-2]
-plt.plot(y, color="green")
+# Plot the best model training and validation accuracy
+plt.plot(gru_mean_val_accuracy, color="blue")
+plt.plot(gru_mean_train_accuracy, color="green")
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend(('Validation', 'Train'))
